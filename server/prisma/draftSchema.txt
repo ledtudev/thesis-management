@@ -1,0 +1,267 @@
+// model ProjectActivityLog {
+//   id           String               @id
+//   entityType   String               @map("entity_type") // "STUDY_TOPIC_DRAFT", "PROJECT"
+//   entityId     String               @map("entity_id")
+//   userId       String               @map("user_id")
+//   userType     UserT                @map("user_type")
+//   student      Students?            @relation(fields: [userId], references: [id], map: "fk_faculty_assignment_student")
+//   faculty      FacultyMembers?      @relation(fields: [userId], references: [id], map: "fk_faculty_assignment_faculty")
+//   action       String               @map("action") // "CREATE", "UPDATE", "APPROVE", "REJECT"
+//   oldValue     String?              @map("old_value")
+//   newValue     String?              @map("new_value")
+//   createdAt    DateTime             @default(now()) @map("created_at")
+//   department   AcademicDepartments? @relation(fields: [departmentId], references: [id])
+//   departmentId String?              @map("department_id") // Liên kết khoa
+
+//   @@index([entityType, entityId, createdAt])
+//   @@index([userId, departmentId, createdAt])
+// }
+
+// model ResultLog {
+//   id           String               @id
+//   entityId     String               @map("entity_id") // ID của ProjectResultOutline
+//   userId       String               @map("user_id")
+//   userType     UserT                @map("user_type")
+//   student      Students?            @relation(fields: [userId], references: [id], map: "fk_result_log_student")
+//   faculty      FacultyMembers?      @relation(fields: [userId], references: [id], map: "fk_result_log_faculty")
+//   action       String               @map("action") // "SUBMIT", "UPDATE", "APPROVE"
+//   oldValue     String?              @map("old_value")
+//   newValue     String?              @map("new_value")
+//   createdAt    DateTime             @default(now()) @map("created_at")
+//   department   AcademicDepartments? @relation(fields: [departmentId], references: [id])
+//   departmentId String?              @map("department_id")
+
+//   @@index([entityId, createdAt])
+//   @@index([userId, departmentId, createdAt])
+// }
+
+// model FacultyAssignmentLog {
+//   id           String               @id
+//   entityType   String               @map("entity_type") // "FACULTY_CHANGE", "DEFENSE_COMMITTEE"
+//   entityId     String               @map("entity_id") // ID của Project hoặc DefenseCommittee
+//   userId       String               @map("user_id") // Người thực hiện thay đổi
+//   userType     UserT                @map("user_type")
+//   student      Students?            @relation(fields: [userId], references: [id], map: "fk_faculty_assignment_log_student")
+//   faculty      FacultyMembers?      @relation(fields: [userId], references: [id], map: "fk_faculty_assignment_log_faculty")
+//   action       String               @map("action") // "CHANGE_FACULTY", "ADD_MEMBER", "UPDATE_DATE"
+//   oldValue     String?              @map("old_value") // Ví dụ: ID giảng viên cũ, ngày cũ
+//   newValue     String?              @map("new_value") // Ví dụ: ID giảng viên mới, ngày mới
+//   reason       String?              @map("reason") // Lý do thay đổi (từ ProjectFacultyChangeLog)
+//   createdAt    DateTime             @default(now()) @map("created_at")
+//   department   AcademicDepartments? @relation(fields: [departmentId], references: [id])
+//   departmentId String?              @map("department_id")
+
+//   @@index([entityType, entityId, createdAt])
+//   @@index([userId, departmentId, createdAt])
+// }
+
+// model TaskLog {
+//   id           String               @id
+//   entityType   String               @map("entity_type") // "TASK_PROJECT", "PERMISSION"
+//   entityId     String               @map("entity_id") // ID của TaskProject hoặc Project/TaskProject
+//   userId       String               @map("user_id")
+//   userType     UserT                @map("user_type")
+//   student      Students?            @relation(fields: [userId], references: [id], map: "fk_task_log_student")
+//   faculty      FacultyMembers?      @relation(fields: [userId], references: [id], map: "fk_task_log_faculty")
+//   action       String               @map("action") // "UPDATE_STATUS", "GRANT_PERMISSION", "REVOKE_PERMISSION"
+//   oldValue     String?              @map("old_value")
+//   newValue     String?              @map("new_value")
+//   createdAt    DateTime             @default(now()) @map("created_at")
+//   department   AcademicDepartments? @relation(fields: [departmentId], references: [id])
+//   departmentId String?              @map("department_id")
+
+//   @@index([entityType, entityId, createdAt])
+//   @@index([userId, departmentId, createdAt])
+// }
+
+// enum SystemInteractionActionT {
+//   // Hành động liên quan đến thông báo (NOTIFICATION)
+//   MARK_READ // Người dùng đánh dấu thông báo là đã đọc
+//   MARK_UNREAD // Đánh dấu lại thông báo là chưa đọc
+//   RESEND // Gửi lại thông báo
+//   NOTIFICATION_SENT // Thông báo được gửi lần đầu
+//   NOTIFICATION_EXPIRED // Thông báo hết hạn
+
+//   // Hành động liên quan đến cấu hình hệ thống (SYSTEM_CONFIG)
+//   UPDATE_DEADLINE // Cập nhật thời hạn (proposalDeadline, topicLockDate, v.v.)
+//   UPDATE_FILE_FORMAT // Cập nhật định dạng file cho phép
+//   UPDATE_SETTING // Cập nhật cấu hình chung khác
+//   CREATE_SETTING // Tạo mới một cấu hình
+//   DELETE_SETTING // Xóa một cấu hình
+// }
+
+// model SystemInteractionLog {
+//   id           String                  @id
+//   entityType   String                  @map("entity_type") // "NOTIFICATION", "SYSTEM_CONFIG"
+//   entityId     String?                 @map("entity_id") // ID của SystemNotification hoặc khóa cấu hình
+//   userId       String                  @map("user_id")
+//   userType     UserT                   @map("user_type")
+//   student      Students?               @relation(fields: [userId], references: [id], map: "fk_system_interaction_log_student")
+//   faculty      FacultyMembers?         @relation(fields: [userId], references: [id], map: "fk_system_interaction_log_faculty")
+//   action       SystemInteractionAction @map("action")
+//   oldValue     String?                 @map("old_value")
+//   newValue     String?                 @map("new_value")
+//   createdAt    DateTime                @default(now()) @map("created_at")
+//   department   AcademicDepartments?    @relation(fields: [departmentId], references: [id])
+//   departmentId String?                 @map("department_id") // Để lại cho thông báo theo khoa
+
+//   @@index([entityType, entityId, createdAt])
+//   @@index([userId, createdAt])
+// }
+
+
+
+// enum NotificationT {
+//   TOPIC_SUBMISSION_APPROVED
+//   TOPIC_SUBMISSION_REJECTED
+//   TOPIC_EDIT_REQUEST
+//   TOPIC_ASSIGNMENT
+//   TOPIC_CHANGE_REQUEST
+//   TOPIC_REVIEW_REQUEST
+//   ADVISOR_ASSIGNMENT
+//   REVIEWER_ASSIGNMENT
+//   ADVISOR_CHANGE_REQUEST
+//   REVIEWER_CHANGE_REQUEST
+//   DEADLINE_REMINDER
+//   PROGRESS_UPDATE_REQUEST
+//   PROGRESS_REPORT_SUBMITTED
+//   FINAL_REPORT_SUBMITTED
+//   FINAL_PRESENTATION_SCHEDULED
+//   SYSTEM_UPDATE
+//   NEW_ANNOUNCEMENT
+//   COMMENT_REPLY
+// }
+
+// enum RelatedEntityT {
+//   STUDY_TOPIC
+//   PROPOSAL_OUTLINE
+//   DEFENSE_COMMITTEE
+//   OTHER
+// }
+
+// model SystemNotification {
+//   id                    String                  @id
+//   senderId              String?                 @map("sender_id") // Ai gửi thông báo
+//   senderType            UserT?                  @map("sender_type")
+//   type                  NotificationT           @map("type")
+//   message               String                  @map("message")
+//   entityType            RelatedEntityT          @map("entity_type") // "STUDY_TOPIC", "STUDY_TOPIC_RESULT"
+//   entityId              Int?                    @map("entity_id")
+//   createdAt             DateTime                @default(now()) @map("created_at")
+//   NotificationRecipient NotificationRecipient[] @relation
+
+//   @@index([entityType, entityId, createdAt])
+// }
+
+// model NotificationRecipient {
+//   id             String             @id
+//   notificationId String             @map("notification_id")
+//   notification   SystemNotification @relation(fields: [notificationId], references: [id])
+//   recipientId    String             @map("recipient_id") // Ai nhận thông báo
+//   recipientType  UserT              @map("recipient_type")
+//   isRead         Boolean            @default(false) @map("is_read")
+//   createdAt      DateTime           @default(now()) @map("created_at")
+
+//   @@index([recipientId, recipientType, isRead])
+// }
+
+
+// enum StatusTaskProjectT {
+//   TO_DO
+//   WORK_IN_PROGRESS
+//   UNDER_REVIEW
+//   COMPLETED
+// }
+
+// enum PriorityTaskProjectT {
+//   URGENT
+//   HIGH
+//   MEDIUM
+//   LOW
+//   BACKLOG
+// }
+
+// enum AssigneeT {
+//   STUDENT
+//   LECTURER
+// }
+
+// model TaskProject {
+//   id               String               @id
+//   name             String               @map("name")
+//   description      String?              @map("description")
+//   status           StatusTaskProjectT   @map("status") // Trạng thái của TaskProject (TO_DO, WORK_IN_PROGRESS, UNDER_REVIEW, COMPLETED)
+//   priority         PriorityTaskProjectT @map("priority") // Mức độ ưu tiên của TaskProject
+//   dueDate          DateTime?            @map("due_date")
+//   createdAt        DateTime             @default(now()) @map("created_at")
+//   updatedAt        DateTime             @updatedAt @map("updated_at")
+//   assigneeType     AssigneeT?           @map("assignee_type") // Loại người nhận TaskProject (STUDENT hoặc LECTURER)
+//   assigneeId       String?              @map("assignee_id") // ID của người nhận TaskProject (giảng viên hoặc sinh viên)
+//   ProjectId        String?              @map("study_topic_id")
+//   Project          Project?             @relation(fields: [ProjectId], references: [id])
+//   isCustomDeadline Boolean?             @default(false) @map("is_custom_deadline")
+//   isDeleted        Boolean              @default(false) @map("is_deleted")
+
+//   reviewers TaskProjectReviewer[]
+
+//   creatorType      AssigneeT?      @map("creator_type")
+//   creatorId        String?         @map("creator_id")
+//   createdByStudent Student?       @relation(fields: [creatorId], references: [id], map: "fk_task_project_student")
+//   createdByFaculty Faculty? @relation(fields: [creatorId], references: [id], map: "fk_task_project_faculty")
+
+//   TaskProjectPermissions TaskProjectPermissions[]
+
+//   @@index([dueDate])
+//   @@index([ProjectId])
+// }
+
+// model TaskProjectPermissions {
+//   id         String @id @default(uuid())
+//   permission String @map("permission")
+
+//   taskProjectId String      @map("task_project_id")
+//   taskProject   TaskProject @relation(fields: [taskProjectId], references: [id])
+
+//   userId           String          @map("user_id")
+//   userType         UserT           @map("user_type")
+//   createdByStudent Student?       @relation(fields: [userId], references: [id], map: "fk_task_project_permission_student")
+//   createdByFaculty Faculty? @relation(fields: [userId], references: [id], map: "fk_task_project_permission_faculty")
+
+//   @@unique([taskProjectId, userId, permission])
+//   @@index([taskProjectId])
+// }
+
+// model TaskProjectReviewer {
+//   id           String             @id
+//   reviewStatus StatusTaskProjectT @map("review_status") // Trạng thái duyệt TaskProject
+//   reviewDate   DateTime?          @map("review_date") // Thời gian duyệt
+
+//   reviewerId       String          @map("reviewer_id")
+//   reviewerType     AssigneeT       @map("reviewer_type")
+//   createdByStudent Student?       @relation(fields: [reviewerId], references: [id], map: "fk_task_project_reviewer_student")
+//   createdByFaculty Faculty? @relation(fields: [reviewerId], references: [id], map: "fk_task_project_reviewer_faculty")
+
+//   TaskProjectId String      @map("TaskProject_id")
+//   TaskProject   TaskProject @relation(fields: [TaskProjectId], references: [id])
+
+//   @@unique([TaskProjectId, reviewerId])
+// }
+
+
+// -------------------- DOCUMENT SYSTEM FILES ------------------------
+
+// model SystemFiles {
+//   id          String  @id
+//   name        String  @map("name")
+//   description String? @map("description")
+
+//   fileType FileT  @map("file_type")
+//   fileUrl  String @map("file_url")
+//   fileSize Int?   @map("file_size")
+
+//   uploadedBy   Faculty? @relation(fields: [uploadedById], references: [id])
+//   uploadedById String?  @map("uploaded_by_id")
+//   createdAt    DateTime @default(now()) @map("created_at")
+// }
+
+

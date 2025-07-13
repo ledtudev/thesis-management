@@ -1,0 +1,869 @@
+// --------------------------- CLIENT & DATASOURCE CONFIGURATION ------------------------
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --------------------------- UTIL ENUM  ------------------------
+
+enum UserT {
+  STUDENT
+  FACULTY
+}
+
+enum ProjectT {
+  GRADUATED // Luận văn tốt nghiệp
+  RESEARCH // Nghiên cứu khoa học
+  COMPETITION // Dự án thi đấu
+  COLLABORATION // Dự án hợp tác
+}
+
+// --------------------------- USER MANAGEMENT ------------------------
+
+enum StudentStatusT {
+  ACTIVE
+  INACTIVE
+  GRADUATED
+  DROPPED_OUT
+  ON_LEAVE
+}
+
+enum GenderT {
+  MALE
+  FEMALE
+  OTHER
+}
+
+model Student {
+  id             String         @id @default(cuid()) @map("id")
+  studentCode    String         @unique @map("student_code")
+  majorCode      String?        @map("major_code")
+  programCode    String?        @map("program_code")
+  bio            String?        @map("bio")
+  fullName       String         @map("full_name") @db.VarChar(255)
+  email          String         @unique @map("email") @db.VarChar(255)
+  password       String         @map("password")
+  phone          String?        @map("phone") @db.VarChar(20)
+  dateOfBirth    DateTime?      @map("date_of_birth")
+  gender         GenderT?       @map("gender")
+  admissionYear  Int?           @map("admission_year")
+  graduationYear Int?           @map("graduation_year")
+  currentGpa     Float?         @map("current_gpa")
+  creditsEarned  Int?           @map("credits_earned")
+  status         StudentStatusT @default(ACTIVE) @map("status")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+  profilePicture String?        @map("profile_pic")
+  lastLogin      DateTime?      @map("last_login")
+  isOnline       Boolean        @default(false) @map("is_online")
+  refreshToken   String?        @map("refresh_token")
+  facultyId      String?        @map("faculty_id")
+
+  ProjectComment         ProjectComment[]         @relation("CommenterStudent")
+  AuditLog               AuditLog[]               @relation("ActionByStudent")
+  CreatedProposedProject ProposedProject[]        @relation("ProposedProjectCreatedByStudent")
+  StudentSelection       StudentSelection[]       @relation
+  ProjectAllocation      ProjectAllocation[]      @relation
+  ProjectFinalReport     ProjectFinalReport[]     @relation("ReportByStudent")
+  ProjectReportComment   ProjectReportComment[]   @relation("ReportCommenterStudent")
+  NotificationSent       Notification[]           @relation("StudentSentNotifications")
+  NotificationReceived   Notification[]           @relation("StudentNotifications")
+  UploadedFile           File[]                   @relation("UploadedByStudent")
+  ProjectMembership      ProjectMember[]          @relation("MemberStudent")
+  ProposedProjectComment ProposedProjectComment[]
+  ProposedProjectMember  ProposedProjectMember[]
+  Faculty                Faculty?                 @relation(fields: [facultyId], references: [id])
+
+  @@index([studentCode, status, facultyId])
+  @@index([email, status])
+  @@index([facultyId, status])
+  @@map("student")
+}
+
+enum FacultyMemberStatusT {
+  ACTIVE
+  INACTIVE
+  RETIRED
+  RESIGNED
+  ON_LEAVE
+}
+
+model FacultyMember {
+  id             String               @id @map("id")
+  fullName       String               @map("full_name") @db.VarChar(255)
+  facultyCode    String?              @unique @map("faculty_member_code") @db.VarChar(50)
+  bio            String?              @map("bio")
+  email          String               @unique @map("email") @db.VarChar(255)
+  password       String               @map("password")
+  status         FacultyMemberStatusT @default(ACTIVE) @map("status")
+  createdAt      DateTime             @default(now()) @map("created_at")
+  updatedAt      DateTime             @updatedAt @map("updated_at")
+  profilePicture String?              @map("profile_picture")
+  lastLogin      DateTime?            @map("last_login")
+  isOnline       Boolean              @default(false) @map("is_online")
+  phoneNumber    String?              @map("phone_number")
+  rank           String?              @map("rank")
+  refreshToken   String?              @map("refresh_token")
+  facultyId      String?              @map("faculty_id")
+
+  Role                       FacultyRole[]               @relation("FacultyMemberRoles")
+  FacultyMembershipDivision  FacultyMembershipDivision[] @relation("FacultyMemberInDivisions")
+  LecturerSelection          LecturerSelection[]         @relation("LecturerSelections")
+  ApprovedStudentSelection   StudentSelection[]          @relation("ApprovedStudentSelection")
+  SelectedByStudent          StudentSelection[]          @relation("LecturerSelectedByStudent")
+  CreatedProjectAllocation   ProjectAllocation[]         @relation("CreatedByFacultyMember")
+  AssignedProjectAllocation  ProjectAllocation[]         @relation("AssignedToLecturer")
+  CreatedProposedProject     ProposedProject[]           @relation("ProposedProjectCreatedByFacultyMember")
+  ApprovedProposedProject    ProposedProject[]           @relation("ProposedProjectApprovedByFacultyMember")
+  ProposedProjectMembership  ProposedProjectMember[]     @relation("FacultyMemberInProposedProject")
+  ProposedProjectComments    ProposedProjectComment[]    @relation("CommenterFacultyMember")
+  ApprovedProject            Project[]                   @relation("ApprovedByFacultyMember")
+  ProjectMembership          ProjectMember[]             @relation("FacultyMemberInProject")
+  ProjectComment             ProjectComment[]            @relation("CommenterFacultyMemberInProject")
+  SubmittedReport            ProjectFinalReport[]        @relation("ReportByFacultyMember")
+  ReportComment              ProjectReportComment[]      @relation("ReportCommenterFacultyMember")
+  UploadedFile               File[]                      @relation("UploadedByFacultyMember")
+  ActionLog                  AuditLog[]                  @relation("ActionByFacultyMember")
+  AffectedLog                AuditLog[]                  @relation("AffectedFacultyMember")
+  ReceivedNotification       Notification[]              @relation("FacultyMemberNotifications")
+  SentNotification           Notification[]              @relation("FacultyMemberSentNotifications")
+  MentionedNotification      Notification[]              @relation("FacultyMemberMentionedInNotifications")
+  DefenseCommittee           DefenseCommittee[]          @relation("CreatedByFacultyMember")
+  DefenseCommitteeMembership DefenseMember[]             @relation("FacultyMemberInDefenseCommittee")
+  Faculty                    Faculty?                    @relation("FacultyMemberInFaculty", fields: [facultyId], references: [id])
+  ProjectEvaluationScore     ProjectEvaluationScore[]
+
+  @@index([email, status])
+  @@map("faculty_member")
+}
+
+enum FacultyMemberRoleT {
+  ADMIN
+  DEAN
+  // DEPARTMENT_HEAD
+  // SECRETARY
+  LECTURER
+}
+
+model FacultyRole {
+  id              String             @id @map("id")
+  facultyMemberId String             @map("faculty_member_id")
+  role            FacultyMemberRoleT @map("role")
+
+  FacultyMember FacultyMember? @relation("FacultyMemberRoles", fields: [facultyMemberId], references: [id])
+
+  @@unique([facultyMemberId, role])
+  @@map("faculty_role")
+}
+
+// --------------------------- ACADEMIC MANAGEMENT ------------------------
+
+enum FacultyStatusT {
+  ACTIVE
+  INACTIVE
+}
+
+model Faculty {
+  id          String         @id @default(uuid()) @map("id")
+  facultyCode String?        @map("faculty_code")
+  name        String         @unique @map("name") @db.VarChar(255)
+  description String?        @map("description")
+  status      FacultyStatusT @default(ACTIVE) @map("status")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  Student            Student[]
+  FacultyMember      FacultyMember[]      @relation("FacultyMemberInFaculty")
+  Division           Division[]           @relation("FacultyDivisions")
+  FieldPoolFaculty   FieldPoolFaculty[]
+  ProjectFinalReport ProjectFinalReport[] @relation("FacultyReports")
+  AuditLog           AuditLog[]           @relation("AuditLogsInFaculty")
+  Notification       Notification[]       @relation("FacultyNotifications")
+
+  @@map("faculty")
+}
+
+enum DivisionStatusT {
+  ACTIVE
+  INACTIVE
+}
+
+model Division {
+  id           String          @id @default(uuid()) @map("id")
+  divisionCode String?         @map("division_code")
+  name         String          @map("name") @db.VarChar(255)
+  description  String?         @map("description")
+  status       DivisionStatusT @default(ACTIVE) @map("status")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+  facultyId    String          @map("faculty_id")
+
+  Faculty                   Faculty                     @relation("FacultyDivisions", fields: [facultyId], references: [id])
+  FacultyMembershipDivision FacultyMembershipDivision[] @relation("DivisionMemberships")
+  Project                   Project[]                   @relation("DivisionProjects")
+
+  @@unique([facultyId, divisionCode])
+  @@map("faculty_division")
+}
+
+enum DivisionRoleT {
+  LECTURER
+  HEAD
+}
+
+model FacultyMembershipDivision {
+  id              String        @id @default(uuid())
+  divisionId      String        @map("division_id")
+  facultyMemberId String        @map("faculty_member_id")
+  role            DivisionRoleT @map("role")
+  Division        Division      @relation("DivisionMemberships", fields: [divisionId], references: [id])
+  FacultyMember   FacultyMember @relation("FacultyMemberInDivisions", fields: [facultyMemberId], references: [id])
+
+  @@unique([divisionId, facultyMemberId])
+  @@map("faculty_membership_division")
+}
+
+enum FieldPoolStatusT {
+  OPEN
+  CLOSED
+  HIDDEN
+}
+
+model FieldPool {
+  id                   String           @id @default(uuid()) @map("id")
+  name                 String           @unique @map("name")
+  description          String?          @map("description")
+  longDescription      String?          @map("long_description")
+  status               FieldPoolStatusT @default(CLOSED) @map("status")
+  createdAt            DateTime         @default(now()) @map("created_at")
+  updatedAt            DateTime         @updatedAt @map("updated_at")
+  registrationDeadline DateTime?        @map("registration_deadline")
+
+  FieldPoolFaculty  FieldPoolFaculty[]  @relation
+  LecturerSelection LecturerSelection[] @relation
+  FieldPoolDomain   FieldPoolDomain[]   @relation
+  StudentSelection  StudentSelection[]  @relation
+  Project           Project[]           @relation
+  ProposedProject   ProposedProject[]   @relation
+
+  @@map("field_pool")
+}
+
+model FieldPoolFaculty {
+  fieldPoolId String @map("field_pool_id")
+  facultyId   String @map("faculty_id")
+
+  Faculty   Faculty   @relation(fields: [facultyId], references: [id])
+  FieldPool FieldPool @relation(fields: [fieldPoolId], references: [id])
+
+  @@id([fieldPoolId, facultyId])
+  @@map("field_pool_faculty")
+}
+
+model FieldPoolDomain {
+  fieldPoolId String @map("field_pool_id")
+  domainId    String @map("domain_id")
+
+  Domain    Domain    @relation(fields: [domainId], references: [id])
+  FieldPool FieldPool @relation(fields: [fieldPoolId], references: [id])
+
+  @@id([fieldPoolId, domainId])
+  @@map("field_pool_domain")
+}
+
+model Domain {
+  id          String  @id @default(uuid())
+  name        String  @unique @map("name")
+  description String? @map("description")
+
+  FieldPool FieldPoolDomain[] @relation
+  Domain    ProjectDomain[]   @relation
+
+  @@map("domain")
+}
+
+// --------------------------- REGISTER MANAGEMENT ------------------------
+
+enum LecturerSelectionStatusT {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model LecturerSelection {
+  id              String                   @id @default(uuid()) @map("id")
+  capacity        Int                      @default(1) @map("capacity")
+  currentCapacity Int                      @default(0) @map("current_capacity")
+  status          LecturerSelectionStatusT @default(PENDING) @map("status")
+  lecturerId      String                   @map("lecturer_id")
+  fieldPoolId     String?                  @map("field_pool_id")
+  createdAt       DateTime                 @default(now()) @map("created_at")
+  updatedAt       DateTime                 @updatedAt @map("updated_at")
+  version         Int                      @default(1)
+  isDeleted       Boolean                  @default(false) @map("is_deleted")
+
+  Lecturer  FacultyMember @relation("LecturerSelections", fields: [lecturerId], references: [id])
+  FieldPool FieldPool?    @relation(fields: [fieldPoolId], references: [id])
+
+  @@unique([lecturerId, fieldPoolId])
+  @@map("lecturer_selection")
+}
+
+enum StudentSelectionStatusT {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model StudentSelection {
+  id                        String                  @id @default(uuid()) @map("id")
+  priority                  Int                     @default(1) @map("priority")
+  topicTitle                String?                 @map("topic_title")
+  description               String?                 @map("description")
+  status                    StudentSelectionStatusT @default(PENDING) @map("status")
+  createdAt                 DateTime                @default(now()) @map("created_at")
+  updatedAt                 DateTime                @updatedAt @map("updated_at")
+  studentId                 String                  @map("student_id")
+  lecturerId                String?                 @map("lecturer_id")
+  fieldPoolId               String?                 @map("field_pool_id")
+  preferredAt               DateTime                @default(now()) @map("preferred_at")
+  approvedByFacultyMemberId String?                 @map("approved_by_faculty_member_id")
+  version                   Int                     @default(1)
+  isDeleted                 Boolean                 @default(false) @map("is_deleted")
+
+  PreferredLecturer       FacultyMember? @relation("LecturerSelectedByStudent", fields: [lecturerId], references: [id])
+  Student                 Student        @relation(fields: [studentId], references: [id])
+  FieldPool               FieldPool?     @relation(fields: [fieldPoolId], references: [id])
+  ApprovedByFacultyMember FacultyMember? @relation("ApprovedStudentSelection", fields: [approvedByFacultyMemberId], references: [id])
+
+  @@unique([studentId, fieldPoolId, priority])
+  @@unique([studentId, fieldPoolId, lecturerId])
+  @@index([studentId, priority])
+  @@index([lecturerId, createdAt, status])
+  @@map("student_selection")
+}
+
+enum ProjectAllocationStatusT {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model ProjectAllocation {
+  id          String                   @id @default(uuid())
+  topicTitle  String                   @map("topic_title")
+  allocatedAt DateTime                 @default(now())
+  studentId   String                   @map("student_id")
+  createdById String                   @map("created_by_id")
+  lecturerId  String                   @map("lecturer_id")
+  version     Int                      @default(1)
+  status      ProjectAllocationStatusT @default(PENDING) @map("status")
+  isDeleted   Boolean                  @default(false) @map("is_deleted")
+  createdAt   DateTime                 @default(now()) @map("created_at")
+  updatedAt   DateTime                 @updatedAt @map("updated_at")
+
+  Student                Student          @relation(fields: [studentId], references: [id])
+  Lecturer               FacultyMember    @relation("AssignedToLecturer", fields: [lecturerId], references: [id])
+  CreatedByFacultyMember FacultyMember    @relation("CreatedByFacultyMember", fields: [createdById], references: [id])
+  ProposedProject        ProposedProject?
+
+  @@unique([studentId, lecturerId, topicTitle])
+  @@index([studentId, lecturerId, allocatedAt])
+  @@map("project_allocation")
+}
+
+// --------------------------- REGISTER PROJECT ------------------------
+
+enum ProposedProjectStatusT {
+  // review topic by advisor
+  TOPIC_SUBMISSION_PENDING
+  TOPIC_PENDING_ADVISOR
+  TOPIC_REQUESTED_CHANGES
+  TOPIC_APPROVED
+  // review outline by advisor
+  OUTLINE_PENDING_SUBMISSION
+  OUTLINE_PENDING_ADVISOR
+  OUTLINE_REQUESTED_CHANGES
+  OUTLINE_REJECTED
+  OUTLINE_APPROVED
+  // review final by head
+  PENDING_HEAD
+  REQUESTED_CHANGES_HEAD
+  REJECTED_BY_HEAD
+  APPROVED_BY_HEAD
+}
+
+model ProposedProject {
+  id                  String                 @id @default(cuid())
+  projectAllocationId String?                @unique @map("project_allocation_id")
+  title               String                 @map("title")
+  description         String?                @map("description")
+  status              ProposedProjectStatusT @default(TOPIC_SUBMISSION_PENDING) @map("status")
+  createdAt           DateTime               @default(now()) @map("created_at")
+  updatedAt           DateTime               @updatedAt @map("updated_at")
+  proposalDeadline    DateTime?              @map("proposal_deadline")
+  topicLockDate       DateTime?              @map("topic_lock_date")
+  approvedAt          DateTime?              @map("approved_at")
+  approvedById        String?                @map("approved_by_id")
+  createdByStudentId  String?                @map("created_by_student_id")
+  createdByFacultyId  String?                @map("created_by_faculty_id")
+  fieldPoolId         String?                @map("field_pool_id")
+  version             Int                    @default(1) @map("version")
+  proposalOutlineId   String?                @map("proposal_outline_id")
+
+  ProjectAllocation       ProjectAllocation?       @relation(fields: [projectAllocationId], references: [id], onDelete: SetNull)
+  CreatedByStudent        Student?                 @relation("ProposedProjectCreatedByStudent", fields: [createdByStudentId], references: [id])
+  CreatedByFacultyMember  FacultyMember?           @relation("ProposedProjectCreatedByFacultyMember", fields: [createdByFacultyId], references: [id])
+  ProposalOutline         ProposalOutline?         @relation(fields: [proposalOutlineId], references: [id])
+  ApprovedByFacultyMember FacultyMember?           @relation("ProposedProjectApprovedByFacultyMember", fields: [approvedById], references: [id])
+  ProposedProjectComment  ProposedProjectComment[] @relation
+  FieldPool               FieldPool?               @relation(fields: [fieldPoolId], references: [id])
+  ProposedProjectMember   ProposedProjectMember[]
+
+  @@map("proposed_project")
+}
+
+enum ProposedProjectMemberStatusT {
+  ACTIVE
+  REMOVED
+}
+
+model ProposedProjectMember {
+  id                String                       @id @default(uuid())
+  proposedProjectId String                       @map("proposed_project_id")
+  studentId         String?                      @map("student_id")
+  facultyMemberId   String?                      @map("faculty_member_id")
+  role              String?                      @map("role")
+  status            ProposedProjectMemberStatusT @default(ACTIVE) @map("status")
+  assignedAt        DateTime                     @default(now()) @map("assigned_at")
+
+  ProposedProject ProposedProject @relation(fields: [proposedProjectId], references: [id], onDelete: Cascade)
+  Student         Student?        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  FacultyMember   FacultyMember?  @relation("FacultyMemberInProposedProject", fields: [facultyMemberId], references: [id])
+
+  @@map("proposed_project_member")
+}
+
+model ProposedProjectComment {
+  id                 String   @id @default(cuid())
+  commenterStudentId String?  @map("commenter_student_id")
+  commenterFacultyId String?  @map("commenter_faculty_id")
+  content            String   @map("content")
+  createdAt          DateTime @default(now()) @map("created_at")
+  proposedProjectId  String   @map("proposed_project_id")
+
+  ProposedProject        ProposedProject @relation(fields: [proposedProjectId], references: [id])
+  CommenterStudent       Student?        @relation(fields: [commenterStudentId], references: [id])
+  CommenterFacultyMember FacultyMember?  @relation("CommenterFacultyMember", fields: [commenterFacultyId], references: [id])
+
+  @@map("proposed_project_comment")
+}
+
+enum ProposalOutlineStatusT {
+  DRAFT
+  PENDING_REVIEW
+  REQUESTED_CHANGES
+  APPROVED
+  REJECTED
+  LOCKED
+}
+
+model ProposalOutline {
+  id              String                 @id @default(cuid())
+  introduction    String                 @map("introduction")
+  objectives      String                 @map("objectives")
+  methodology     String                 @map("methodology")
+  expectedResults String                 @map("expected_results")
+  fileId          String?                @unique @map("file_id")
+  status          ProposalOutlineStatusT @default(DRAFT) @map("status")
+  createdAt       DateTime               @default(now()) @map("created_at")
+  updatedAt       DateTime               @updatedAt @map("updated_at")
+  version         Int                    @default(1)
+  projectId       String?                @unique @map("project_id")
+
+  File            File?             @relation(fields: [fileId], references: [id])
+  Project         Project?          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  ProposedProject ProposedProject[]
+
+  @@map("proposal_outline")
+}
+
+// --------------------------- PROJECT MANAGEMENT ------------------------
+
+enum ProjectStatusT {
+  IN_PROGRESS
+  WAITING_FOR_EVALUATION
+  COMPLETED
+  ON_HOLD
+  CANCELLED
+}
+
+model Project {
+  id               String         @id @default(cuid())
+  type             ProjectT       @map("type")
+  title            String         @map("title")
+  description      String?        @map("description")
+  field            String         @map("field")
+  status           ProjectStatusT @default(IN_PROGRESS) @map("status")
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
+  proposalDeadline DateTime?      @map("proposal_deadline")
+  topicLockDate    DateTime?      @map("topic_lock_date")
+  customFields     Json?          @map("custom_fields")
+  approvedById     String         @map("approved_by_id")
+  fieldPoolId      String?        @map("field_pool_id")
+  version          Int            @default(1)
+  divisionId       String?        @map("division_id")
+
+  ApprovedByFacultyMember FacultyMember?       @relation("ApprovedByFacultyMember", fields: [approvedById], references: [id], map: "project_approved_by_id_fkey")
+  Division                Division?            @relation("DivisionProjects", fields: [divisionId], references: [id], map: "project_division_id_fkey")
+  ProposalOutline         ProposalOutline?     @relation(map: "project_proposal_outline_id_fkey")
+  Member                  ProjectMember[]      @relation(map: "project_members_id_fkey")
+  Comment                 ProjectComment[]     @relation(map: "project_comments_id_fkey")
+  DefenseCommittee        DefenseCommittee?    @relation
+  FinalReport             ProjectFinalReport[] @relation
+  FieldPool               FieldPool?           @relation(fields: [fieldPoolId], references: [id])
+  Domain                  ProjectDomain[]      @relation
+  ProjectEvaluation       ProjectEvaluation?
+
+  @@index([type, status, createdAt])
+  @@index([approvedById, status, createdAt])
+  @@index([type, status])
+  @@map("project")
+}
+
+enum ProjectMemberStatusT {
+  ACTIVE
+  REMOVED
+}
+
+model ProjectMember {
+  id              String                       @id @default(uuid())
+  projectId       String?                      @map("project_id")
+  studentId       String?                      @map("student_id")
+  facultyMemberId String?                      @map("faculty_member_id")
+  role            String?                      @map("role")
+  status          ProposedProjectMemberStatusT @default(ACTIVE) @map("status")
+  assignedAt      DateTime                     @default(now()) @map("assigned_at")
+
+  Student       Student?       @relation("MemberStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  FacultyMember FacultyMember? @relation("FacultyMemberInProject", fields: [facultyMemberId], references: [id])
+  Project       Project?       @relation(fields: [projectId], references: [id])
+
+  @@map("project_member")
+}
+
+model ProjectComment {
+  id                       String   @id @default(cuid())
+  content                  String   @map("content")
+  createdAt                DateTime @default(now()) @map("created_at")
+  updatedAt                DateTime @updatedAt @map("updated_at")
+  projectId                String   @map("project_id")
+  commenterStudentId       String?  @map("commenter_student_id")
+  commenterFacultyMemberId String?  @map("commenter_faculty_member_id")
+
+  Project                Project        @relation(fields: [projectId], references: [id])
+  CommenterStudent       Student?       @relation("CommenterStudent", fields: [commenterStudentId], references: [id])
+  CommenterFacultyMember FacultyMember? @relation("CommenterFacultyMemberInProject", fields: [commenterFacultyMemberId], references: [id])
+
+  @@index([projectId, createdAt])
+  @@index([commenterStudentId])
+  @@index([commenterFacultyMemberId])
+  @@map("project_comment")
+}
+
+model ProjectDomain {
+  projectId String @map("project_id")
+  domainId  String @map("domain_id")
+
+  Project Project @relation(fields: [projectId], references: [id])
+  Domain  Domain  @relation(fields: [domainId], references: [id])
+
+  @@id([projectId, domainId])
+  @@map("project_domain")
+}
+
+// ------------------------- PROJECT DEFENSE MANAGEMENT ------------------------
+
+model ProjectFinalReport {
+  id               String   @id @default(cuid())
+  projectId        String   @map("project_id")
+  mainReportFileId String?  @unique @map("main_report_file_id")
+  submittedAt      DateTime @default(now()) @map("submitted_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+  version          Int      @default(1)
+  studentId        String?  @map("student_id")
+  facultyId        String?  @map("faculty_id")
+  facultyMemberId  String?  @map("faculty_member_id")
+
+  Project                  Project                @relation(fields: [projectId], references: [id])
+  MainReportFile           File?                  @relation("MainReportFile", fields: [mainReportFileId], references: [id])
+  Attachments              ReportAttachment[]     @relation
+  ProjectReportComments    ProjectReportComment[] @relation
+  Student                  Student?               @relation("ReportByStudent", fields: [studentId], references: [id])
+  Faculty                  Faculty?               @relation("FacultyReports", fields: [facultyId], references: [id])
+  SubmittedByFacultyMember FacultyMember?         @relation("ReportByFacultyMember", fields: [facultyMemberId], references: [id])
+
+  @@unique([projectId, mainReportFileId])
+  @@index([projectId])
+  @@map("project_final_report")
+}
+
+model ReportAttachment {
+  id          String   @id @default(uuid())
+  reportId    String   @map("report_id")
+  fileId      String   @map("file_id")
+  description String?  @map("description")
+  addedAt     DateTime @default(now()) @map("added_at")
+
+  ProjectFinalReport ProjectFinalReport @relation(fields: [reportId], references: [id])
+  File               File               @relation(fields: [fileId], references: [id])
+
+  @@unique([reportId, fileId])
+  @@index([reportId])
+  @@index([fileId])
+  @@map("report_attachment")
+}
+
+model ProjectReportComment {
+  id                       String   @id @default(cuid())
+  finalReportId            String   @map("final_report_id")
+  commenterStudentId       String?  @map("commenter_student_id")
+  commenterFacultyMemberId String?  @map("commenter_faculty_member_id")
+  content                  String   @map("content")
+  createdAt                DateTime @default(now()) @map("created_at")
+  updatedAt                DateTime @updatedAt @map("updated_at")
+  version                  Int      @default(1)
+
+  FinalReport            ProjectFinalReport @relation(fields: [finalReportId], references: [id])
+  CommenterStudent       Student?           @relation("ReportCommenterStudent", fields: [commenterStudentId], references: [id])
+  CommenterFacultyMember FacultyMember?     @relation("ReportCommenterFacultyMember", fields: [commenterFacultyMemberId], references: [id])
+
+  @@index([finalReportId])
+  @@map("project_report_comment")
+}
+
+enum DefenseCommitteeStatusT {
+  PREPARING
+  SCHEDULED
+  ONGOING
+  FINISHED
+  CANCELLED
+}
+
+model DefenseCommittee {
+  id          String                  @id @default(cuid())
+  projectId   String                  @unique @map("project_id")
+  name        String                  @map("name")
+  description String?                 @map("description")
+  defenseDate DateTime                @map("defense_date")
+  location    String?                 @map("location")
+  status      DefenseCommitteeStatusT @default(PREPARING) @map("status")
+  createdAt   DateTime                @default(now()) @map("created_at")
+  updatedAt   DateTime                @updatedAt @map("updated_at")
+  createdById String                  @map("created_by_id") // Faculty ID
+  version     Int                     @default(1)
+
+  Project                Project         @relation(fields: [projectId], references: [id])
+  Members                DefenseMember[] @relation
+  CreatedByFacultyMember FacultyMember   @relation("CreatedByFacultyMember", fields: [createdById], references: [id])
+
+  @@index([defenseDate])
+  @@index([projectId])
+  @@map("defense_committee")
+}
+
+enum DefenseCommitteeRoleT {
+  CHAIRMAN
+  SECRETARY
+  REVIEWER
+  MEMBER
+}
+
+model DefenseMember {
+  id                 String                @id @default(cuid())
+  role               DefenseCommitteeRoleT @map("role")
+  defenseCommitteeId String                @map("defense_committee_id")
+  facultyMemberId    String                @map("faculty_member_id")
+  version            Int                   @default(1)
+
+  DefenseCommittee DefenseCommittee @relation(fields: [defenseCommitteeId], references: [id])
+  FacultyMember    FacultyMember    @relation("FacultyMemberInDefenseCommittee", fields: [facultyMemberId], references: [id])
+
+  @@unique([defenseCommitteeId, facultyMemberId])
+  @@map("defense_committee_member")
+}
+
+// --------------------------- PROJECT EVALUATION RESULT ------------------------
+
+enum ProjectEvaluationStatusT {
+  PENDING
+  EVALUATED
+}
+
+enum EvaluatorRole {
+  ADVISOR
+  COMMITTEE
+}
+
+model ProjectEvaluation {
+  id              String                   @id @default(uuid())
+  projectId       String                   @unique @map("project_id")
+  finalScore      Float?                   @map("final_score")
+  status          ProjectEvaluationStatusT @default(PENDING) @map("status")
+  advisorWeight   Float?                   @map("advisor_weight")
+  committeeWeight Float?                   @map("committee_weight")
+  createdAt       DateTime                 @default(now()) @map("created_at")
+  updatedAt       DateTime                 @updatedAt @map("updated_at")
+  version         Int                      @default(1)
+
+  Project          Project                  @relation(fields: [projectId], references: [id])
+  EvaluationScores ProjectEvaluationScore[] @relation("EvaluationScores")
+
+  @@map("project_evaluation")
+}
+
+model ProjectEvaluationScore {
+  id           String        @id @default(uuid())
+  evaluationId String        @map("evaluation_id")
+  evaluatorId  String        @map("evaluator_id")
+  role         EvaluatorRole @default(COMMITTEE)
+  score        Float         @map("score")
+  comment      String?       @map("comment")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  version      Int           @default(1)
+
+  ProjectEvaluation ProjectEvaluation @relation("EvaluationScores", fields: [evaluationId], references: [id])
+  Evaluator         FacultyMember     @relation(fields: [evaluatorId], references: [id])
+
+  @@unique([evaluationId, evaluatorId])
+  @@map("project_evaluation_score")
+}
+
+// --------------------------- FILE MANAGEMENT ------------------------
+
+enum FileT {
+  PDF
+  WORD
+  PRESENTATION
+  SPREADSHEET
+  AUTOCAD
+  IMAGE
+  VIDEO
+  CODE
+  DATASET
+  OTHER
+}
+
+model File {
+  id                  String    @id @default(uuid())
+  fileName            String    @map("file_name")
+  originalName        String    @map("original_name")
+  fileUrl             String?   @map("file_url")
+  filePath            String?   @map("file_path")
+  fileType            FileT     @map("file_type")
+  mimeType            String    @map("mime_type")
+  fileSize            Int       @map("file_size")
+  checksum            String?   @map("checksum")
+  uploadedByStudentId String?   @map("uploaded_by_student_id")
+  uploadedByFacultyId String?   @map("uploaded_by_faculty_id")
+  uploadedAt          DateTime  @default(now()) @map("uploaded_at")
+  lastAccessed        DateTime? @map("last_accessed")
+  isPublic            Boolean   @default(false) @map("is_public")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  isArchived          Boolean   @default(false) @map("is_archived")
+  metadata            Json?     @map("metadata")
+
+  ProposalOutline    ProposalOutline[]   @relation
+  ProjectFinalReport ProjectFinalReport? @relation("MainReportFile")
+  ReportAttachment   ReportAttachment[]  @relation
+
+  UploadedByStudent Student?       @relation("UploadedByStudent", fields: [uploadedByStudentId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  UploadedByFaculty FacultyMember? @relation("UploadedByFacultyMember", fields: [uploadedByFacultyId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([fileType, uploadedAt])
+  @@index([uploadedByStudentId])
+  @@index([uploadedByFacultyId])
+  @@map("file")
+}
+
+// --------------------------- LOG SYSTEM ------------------------
+
+model AuditLog {
+  id                      String   @id @default(uuid())
+  entityType              String   @map("entity_type")
+  entityId                String?  @map("entity_id")
+  action                  String   @map("action")
+  oldValue                Json?    @map("old_value")
+  newValue                Json?    @map("new_value")
+  metadata                Json?    @map("metadata")
+  createdAt               DateTime @default(now()) @map("created_at")
+  facultyId               String?  @map("faculty_id")
+  actionByStudentId       String?  @map("action_by_student_id")
+  actionByFacultyMemberId String?  @map("action_by_faculty_id")
+  facultyMemberId         String?  @map("faculty_member_id")
+
+  Faculty               Faculty?       @relation("AuditLogsInFaculty", fields: [facultyId], references: [id])
+  ActionByStudent       Student?       @relation("ActionByStudent", fields: [actionByStudentId], references: [id])
+  ActionByFacultyMember FacultyMember? @relation("ActionByFacultyMember", fields: [actionByFacultyMemberId], references: [id])
+  AffectedFacultyMember FacultyMember? @relation("AffectedFacultyMember", fields: [facultyMemberId], references: [id])
+
+  @@index([entityType, entityId, createdAt])
+  @@index([actionByStudentId])
+  @@index([actionByFacultyMemberId])
+  @@index([action, createdAt])
+  @@map("audit_log")
+}
+
+// --------------------------- NOTIFICATION SYSTEM ------------------------
+
+enum NotificationType {
+  INFO
+  WARNING
+  DEADLINE
+  TASK_ASSIGNED
+  COMMENT_MENTION
+  PROPOSAL_STATUS_CHANGE
+  OUTLINE_STATUS_CHANGE
+  REPORT_STATUS_CHANGE
+  REVISION_REQUEST
+  GRADE_AVAILABLE
+  MEETING_SCHEDULED
+  SYSTEM_UPDATE
+  CUSTOM
+}
+
+model Notification {
+  id                 String           @id @default(uuid())
+  recipientStudentId String?          @map("recipient_student_id")
+  recipientFacultyId String?          @map("recipient_faculty_id")
+  senderStudentId    String?          @map("sender_student_id")
+  senderFacultyId    String?          @map("sender_faculty_id")
+  type               NotificationType @map("type")
+  title              String           @map("title")
+  message            String           @map("message")
+  relatedEntityType  String?          @map("related_entity_type")
+  relatedEntityId    String?          @map("related_entity_id")
+  isRead             Boolean          @default(false) @map("is_read")
+  readAt             DateTime?        @map("read_at")
+  createdAt          DateTime         @default(now()) @map("created_at")
+  facultyId          String?          @map("faculty_id")
+  facultyMemberId    String?          @map("faculty_member_id")
+
+  RecipientStudent       Student?       @relation("StudentNotifications", fields: [recipientStudentId], references: [id], onDelete: Cascade)
+  RecipientFaculty       FacultyMember? @relation("FacultyMemberNotifications", fields: [recipientFacultyId], references: [id], onDelete: Cascade)
+  SenderStudent          Student?       @relation("StudentSentNotifications", fields: [senderStudentId], references: [id], onDelete: SetNull)
+  SenderFaculty          FacultyMember? @relation("FacultyMemberSentNotifications", fields: [senderFacultyId], references: [id], onDelete: SetNull)
+  RelatedFaculty         Faculty?       @relation("FacultyNotifications", fields: [facultyId], references: [id])
+  MentionedFacultyMember FacultyMember? @relation("FacultyMemberMentionedInNotifications", fields: [facultyMemberId], references: [id])
+
+  @@index([recipientStudentId, isRead, createdAt])
+  @@index([recipientFacultyId, isRead, createdAt])
+  @@map("notification")
+}

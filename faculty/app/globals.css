@@ -1,0 +1,114 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom CSS for dark mode */
+.dark body {
+  background-color: #121212;
+  color: #e0e0e0;
+}
+
+.dark .MuiPaper-root {
+  background-color: #1e1e1e;
+}
+
+/* Add a class to handle the initial dark mode flash */
+.dark-mode-init {
+  visibility: hidden;
+}
+
+html.dark body {
+  color-scheme: dark;
+}
+
+/* Customize scrollbars for dark theme */
+.dark ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #2b2b2b;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #6b6b6b;
+  border-radius: 5px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #959595;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root,
+.app {
+  height: 100%;
+  width: 100%;
+  @apply text-sm;
+  @apply bg-white;
+  @apply dark:bg-black;
+}
+
+/* TIMELINE STYLING */
+.timeline ._3_ygE {
+  @apply rounded-tl-md border border-r-0 border-[#e6e4e4] dark:border-stroke-dark;
+}
+.timeline ._2eZzQ {
+  @apply border-[#e6e4e4] dark:border-stroke-dark;
+}
+.timeline ._2dZTy {
+  @apply fill-white dark:fill-dark-secondary;
+}
+.timeline ._2dZTy:nth-child(even) {
+  @apply fill-[#f5f5f5] dark:fill-dark-tertiary;
+}
+.timeline ._35nLX {
+  @apply fill-white stroke-[#e6e4e4] dark:fill-dark-secondary dark:stroke-stroke-dark;
+}
+.timeline ._9w8d5 {
+  @apply fill-[#333] dark:fill-white;
+}
+.timeline ._34SS0 {
+  @apply bg-white dark:bg-dark-secondary;
+}
+.timeline ._34SS0:nth-of-type(even) {
+  @apply bg-[#f5f5f5] dark:bg-dark-tertiary;
+}
+.timeline ._RuwuK,
+.timeline ._3rUKi,
+.timeline ._1rLuZ {
+  @apply stroke-[#e6e4e4] dark:stroke-stroke-dark;
+}
+.timeline ._3ZbQT {
+  @apply border-l-0 border-[#e6e4e4] dark:border-stroke-dark;
+}
+.timeline ._3T42e {
+  @apply bg-white dark:bg-dark-bg;
+}
+.timeline ._29NTg {
+  @apply dark:text-neutral-500;
+}
+
+::-webkit-scrollbar {
+  width: 0px;
+  height: 0px;
+}
+
+/* Hide scrollbars in navigation */
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
